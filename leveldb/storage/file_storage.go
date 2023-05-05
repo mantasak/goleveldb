@@ -581,6 +581,10 @@ type fileWrap struct {
 	closed bool
 }
 
+func (mr *fileWrap) GetOsFd() int64 {
+	return int64(mr.Fd())
+}
+
 func (fw *fileWrap) Sync() error {
 	if err := fw.File.Sync(); err != nil {
 		return err

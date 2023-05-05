@@ -82,6 +82,11 @@ type Reader interface {
 	io.ReadSeeker
 	io.ReaderAt
 	io.Closer
+	Fder
+}
+
+type Fder interface {
+	GetOsFd() int64
 }
 
 // Writer is the interface that groups the basic Write, Sync and Close

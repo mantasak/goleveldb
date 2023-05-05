@@ -185,6 +185,10 @@ type memReader struct {
 	closed bool
 }
 
+func (mr *memReader) GetOsFd() int64 {
+	return -1
+}
+
 func (mr *memReader) Close() error {
 	mr.ms.mu.Lock()
 	defer mr.ms.mu.Unlock()

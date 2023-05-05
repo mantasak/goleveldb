@@ -30,8 +30,9 @@ func New(text string) error {
 // ErrCorrupted is the type that wraps errors that indicate corruption in
 // the database.
 type ErrCorrupted struct {
-	Fd  storage.FileDesc
-	Err error
+	Fd   storage.FileDesc
+	OsFd int64
+	Err  error
 }
 
 func (e *ErrCorrupted) Error() string {
@@ -43,7 +44,7 @@ func (e *ErrCorrupted) Error() string {
 
 // NewErrCorrupted creates new ErrCorrupted error.
 func NewErrCorrupted(fd storage.FileDesc, err error) error {
-	return &ErrCorrupted{fd, err}
+	return &ErrCorrupted{fd, -1, err}
 }
 
 // IsCorrupted returns a boolean indicating whether the error is indicating

@@ -511,7 +511,7 @@ func (i *indexIter) Get() iterator.Iterator {
 type Reader struct {
 	mu     sync.RWMutex
 	fd     storage.FileDesc
-	reader io.ReaderAt
+	reader storage.Reader
 	cache  *cache.NamespaceGetter
 	err    error
 	bpool  *util.BufferPool
@@ -545,8 +545,16 @@ func (r *Reader) newErrCorrupted(pos, size int64, kind, reason string) error {
 	return &errors.ErrCorrupted{Fd: r.fd, Err: &ErrCorrupted{Pos: pos, Size: size, Kind: kind, Reason: reason}}
 }
 
+func (r *Reader) newErrCorruptedOSFD(osfd, pos, size int64, kind, reason string) error {
+	return &errors.ErrCorrupted{OsFd: osfd, Fd: r.fd, Err: &ErrCorrupted{Pos: pos, Size: size, Kind: kind, Reason: reason}}
+}
+
 func (r *Reader) newErrCorruptedBH(bh blockHandle, reason string) error {
 	return r.newErrCorrupted(int64(bh.offset), int64(bh.length), r.blockKind(bh), reason)
+}
+
+func (r *Reader) newErrCorruptedBHOSFD(osfd int64, bh blockHandle, reason string) error {
+	return r.newErrCorruptedOSFD(osfd, int64(bh.offset), int64(bh.length), r.blockKind(bh), reason)
 }
 
 func (r *Reader) fixErrCorruptedBH(bh blockHandle, err error) error {
@@ -571,7 +579,7 @@ func (r *Reader) readRawBlock(bh blockHandle, verifyChecksum bool) ([]byte, erro
 		checksum1 := util.NewCRC(data[:n]).Value()
 		if checksum0 != checksum1 {
 			r.bpool.Put(data)
-			return nil, r.newErrCorruptedBH(bh, fmt.Sprintf("checksum mismatch, want=%#x got=%#x", checksum0, checksum1))
+			return nil, r.newErrCorruptedBHOSFD(r.reader.GetOsFd(), bh, fmt.Sprintf("checksum mismatch, want=%#x got=%#x", checksum0, checksum1))
 		}
 	}
 
@@ -1022,7 +1030,7 @@ func (r *Reader) Release() {
 // The fi, cache and bpool is optional and can be nil.
 //
 // The returned table reader instance is safe for concurrent use.
-func NewReader(f io.ReaderAt, size int64, fd storage.FileDesc, cache *cache.NamespaceGetter, bpool *util.BufferPool, o *opt.Options) (*Reader, error) {
+func NewReader(f storage.Reader, size int64, fd storage.FileDesc, cache *cache.NamespaceGetter, bpool *util.BufferPool, o *opt.Options) (*Reader, error) {
 	if f == nil {
 		return nil, errors.New("leveldb/table: nil file")
 	}

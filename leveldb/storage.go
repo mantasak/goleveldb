@@ -39,6 +39,10 @@ type iStorageReader struct {
 	c *iStorage
 }
 
+func (r *iStorageReader) GetOsFd() int64 {
+	return r.Reader.GetOsFd()
+}
+
 func (r *iStorageReader) Read(p []byte) (n int, err error) {
 	n, err = r.Reader.Read(p)
 	atomic.AddUint64(&r.c.read, uint64(n))

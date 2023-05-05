@@ -17,8 +17,6 @@ import (
 	"strings"
 	"sync"
 
-	. "github.com/onsi/gomega"
-
 	"github.com/syndtr/goleveldb/leveldb/storage"
 )
 
@@ -175,6 +173,10 @@ type reader struct {
 	s  *Storage
 	fd storage.FileDesc
 	storage.Reader
+}
+
+func (r *reader) GetOsFd() int64 {
+	return -1
 }
 
 func (r *reader) Read(p []byte) (n int, err error) {
